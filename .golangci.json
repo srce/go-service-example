@@ -1,0 +1,18 @@
+{
+    "linters": {
+        "enable-all": true,
+        "disable": [
+            "paralleltest",
+            "testpackage",
+            "gochecknoglobals",
+            "gci",
+            "nlreturn",
+            "exhaustivestruct",
+            "gocritic",
+            "wsl",
+            "godox",
+            "godot",
+            "noctx"
+        ]
+    }
+}
