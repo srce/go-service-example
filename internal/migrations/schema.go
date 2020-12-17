@@ -150,12 +150,12 @@ func (s *Schema) Apply(migrations []Migrator) (n int, err error) {
 	for _, m := range migrations {
 		err = m.Apply(tx)
 		if err != nil {
-			return 0, fmt.Errorf("applying: %w", err)
+			return 0, fmt.Errorf("%s: %w", m.Name(), err)
 		}
 
 		_, err = tx.Exec(q, m.Name(), now)
 		if err != nil {
-			return 0, fmt.Errorf("executing: %w", err)
+			return 0, fmt.Errorf("%s: %w", m.Name(), err)
 		}
 
 		n++

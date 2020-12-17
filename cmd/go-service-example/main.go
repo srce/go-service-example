@@ -10,7 +10,10 @@ import (
 	"github.com/dzyanis/go-service-example/internal/api"
 	"github.com/dzyanis/go-service-example/internal/config"
 	"github.com/dzyanis/go-service-example/internal/migrations"
+	"github.com/dzyanis/go-service-example/internal/users"
+	"github.com/dzyanis/go-service-example/internal/wallets"
 	"github.com/dzyanis/go-service-example/pkg/boot"
+	"github.com/dzyanis/go-service-example/pkg/controllers"
 	"github.com/dzyanis/go-service-example/pkg/database"
 	"github.com/dzyanis/go-service-example/pkg/logger"
 )
@@ -27,8 +30,6 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Printf("AAA %#v", cnf.Postgres)
-
 	db := database.NewDatabase(cnf.Postgres)
 	dbBoot := database.NewBoot(db)
 	if err := runner.Try(&dbBoot, 10, time.Second); err != nil {
@@ -42,7 +43,12 @@ func main() {
 		log.Fatal(err)
 	}
 
-	httpServer := api.NewServer(cnf.API)
+	usersController := users.NewController(log,
+		users.NewService(users.NewRepository(db)), controllers.JSONHelper{})
+
+	walletsController := wallets.NewController(log, controllers.JSONHelper{})
+
+	httpServer := api.NewServer(cnf.API, usersController, walletsController)
 	apiBoot := api.NewBoot(log, httpServer)
 	if err := runner.Try(&apiBoot, 3, time.Second); err != nil {
 		log.Fatal(err)

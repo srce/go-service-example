@@ -24,7 +24,7 @@ func (b Boot) Name() string {
 }
 
 func (b Boot) Init(ctx context.Context) error {
-	if _, err := RegisterHandlers(b.log, b.api); err != nil {
+	if err := RegisterHandlers(b.log, b.api); err != nil {
 		return fmt.Errorf("registering handlers: %w", err)
 	}
 

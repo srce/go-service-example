@@ -5,12 +5,15 @@ import (
 
 	"github.com/gorilla/mux"
 
-	"github.com/dzyanis/go-service-example/internal/wallets"
 	"github.com/dzyanis/go-service-example/pkg/logger"
 )
 
-func RegisterHandlers(log *logger.Logger, srv *Server) (*Server, error) {
+func RegisterHandlers(log *logger.Logger, s *Server) error {
 	r := mux.NewRouter()
+
+	r.NotFoundHandler = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("not found: %s", r.URL.String())
+	})
 
 	// CORS
 	r.Methods(http.MethodOptions).HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -26,19 +29,25 @@ func RegisterHandlers(log *logger.Logger, srv *Server) (*Server, error) {
 	}).Methods(http.MethodGet)
 
 	// protected routes
-	v1 := r.PathPrefix("/api/v1").Subrouter()
+	v1 := r.PathPrefix("/v1").Subrouter()
 
-	// Wallet
+	// Users
+	sr := v1.PathPrefix("/users").Subrouter()
+	sr.HandleFunc("/{id}", s.users.Get).Methods(http.MethodPost)
+	sr.HandleFunc("/{id}", s.users.Update).Methods(http.MethodPost)
+	sr.HandleFunc("/", s.users.Create).Methods(http.MethodPost)
+	sr.HandleFunc("/{id}", s.users.Delete).Methods(http.MethodDelete)
+
+	// Wallets
 	{
-		route := v1.PathPrefix("/wallet").Subrouter()
-		controller := wallets.NewController(log)
-		route.HandleFunc("/{id}", controller.Create).Methods(http.MethodGet)
-		route.HandleFunc("/{id}", controller.Update).Methods(http.MethodPost)
-		route.HandleFunc("/", controller.Create).Methods(http.MethodPost)
-		route.HandleFunc("/{id}", controller.Delete).Methods(http.MethodDelete)
+		sr := v1.PathPrefix("/wallets").Subrouter()
+		sr.HandleFunc("/{id}", s.wallets.Create).Methods(http.MethodGet)
+		sr.HandleFunc("/{id}", s.wallets.Update).Methods(http.MethodPost)
+		sr.HandleFunc("/", s.wallets.Create).Methods(http.MethodPost)
+		sr.HandleFunc("/{id}", s.wallets.Delete).Methods(http.MethodDelete)
 	}
 
-	srv.Handler = r
+	s.Handler = r
 
-	return srv, nil
+	return nil
 }
