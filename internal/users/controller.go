@@ -1,7 +1,6 @@
 package users
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -25,18 +24,16 @@ func NewController(log *logger.Logger, service *Service, helper controllers.JSON
 	}
 }
 
-var ErrRequredValue = errors.New("value is required")
-
 func (c *Controller) Create(w http.ResponseWriter, r *http.Request) {
 	name := r.FormValue("name")
 	if len(name) == 0 {
-		c.helper.Error(w, http.StatusBadRequest, fmt.Errorf("name params: %w", ErrRequredValue))
+		c.helper.Error(w, http.StatusBadRequest, fmt.Errorf("name params: %w", controllers.ErrRequredValue))
 		return
 	}
 
 	email := r.FormValue("email")
 	if len(email) == 0 {
-		c.helper.Error(w, http.StatusBadRequest, fmt.Errorf("email params: %w", ErrRequredValue))
+		c.helper.Error(w, http.StatusBadRequest, fmt.Errorf("email params: %w", controllers.ErrRequredValue))
 		return
 	}
 
@@ -50,7 +47,7 @@ func (c *Controller) Create(w http.ResponseWriter, r *http.Request) {
 
 func (c *Controller) Update(w http.ResponseWriter, r *http.Request) {
 	// TODO: implement
-	c.helper.Error(w, http.StatusNotImplemented, errors.New("not implemented"))
+	c.helper.Error(w, http.StatusNotImplemented, controllers.ErrNotImplemented)
 }
 
 func (c *Controller) Delete(w http.ResponseWriter, r *http.Request) {
@@ -58,15 +55,15 @@ func (c *Controller) Delete(w http.ResponseWriter, r *http.Request) {
 
 	id, ok := vars["id"]
 	if !ok {
-		c.helper.Error(w, http.StatusBadRequest, fmt.Errorf("id params: %w", ErrRequredValue))
+		c.helper.Error(w, http.StatusBadRequest, fmt.Errorf("id params: %w", controllers.ErrRequredValue))
 	}
 
-	userID, err := strconv.ParseInt(id, 10, 64)
+	walletID, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		c.helper.Error(w, http.StatusBadRequest, err)
 	}
 
-	if err := c.service.Delete(r.Context(), userID); err != nil {
+	if err := c.service.Delete(r.Context(), walletID); err != nil {
 		c.helper.Error(w, http.StatusBadRequest, err)
 	}
 	c.helper.Response(w, struct {
@@ -81,15 +78,15 @@ func (c *Controller) Get(w http.ResponseWriter, r *http.Request) {
 
 	id, ok := vars["id"]
 	if !ok {
-		c.helper.Error(w, http.StatusBadRequest, fmt.Errorf("id params: %w", ErrRequredValue))
+		c.helper.Error(w, http.StatusBadRequest, fmt.Errorf("id params: %w", controllers.ErrRequredValue))
 	}
 
-	userID, err := strconv.ParseInt(id, 10, 64)
+	walletID, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
 		c.helper.Error(w, http.StatusBadRequest, err)
 	}
 
-	resp, err := c.service.Get(r.Context(), userID)
+	resp, err := c.service.Get(r.Context(), walletID)
 	if err != nil {
 		c.helper.Error(w, http.StatusBadRequest, err)
 	}

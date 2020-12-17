@@ -89,6 +89,34 @@ var list = []Migrator{
 			return nil
 		},
 	},
+
+	Migration{
+		NameString: "202012153_create_wallets",
+		ApplyFunc: func(tx *sql.Tx) error {
+			query := `
+				CREATE TABLE IF NOT EXISTS wallets (
+					id BIGSERIAL PRIMARY KEY
+					, user_id BIGINT NOT NULL
+					, value BIGINT NOT NULL
+					, currency TEXT NOT NULL
+					, deleted BOOLEAN  NOT NULL
+					, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+					, updated_at TIMESTAMPTZ
+				);`
+
+			if _, err := tx.Exec(query); err != nil {
+				return fmt.Errorf("apply: %w", err)
+			}
+			return nil
+		},
+		RollbackFunc: func(tx *sql.Tx) error {
+			query := `DROP TABLE IF EXISTS wallets;`
+			if _, err := tx.Exec(query); err != nil {
+				return fmt.Errorf("rollback: %w", err)
+			}
+			return nil
+		},
+	},
 }
 
 type Boot struct {

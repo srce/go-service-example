@@ -39,7 +39,7 @@ func (s *Service) Create(ctx context.Context, name string, email string) (*Respo
 		UpdatedAt: time.Now(),
 	})
 	if err != nil {
-		return nil, fmt.Errorf("creating user: %w", err)
+		return nil, fmt.Errorf("creating: %w", err)
 	}
 
 	return s.Get(ctx, userID)
@@ -52,7 +52,7 @@ func (s *Service) Update(ctx context.Context, r Request) error {
 
 func (s *Service) Delete(ctx context.Context, userID int64) error {
 	if err := s.repo.Delete(ctx, userID); err != nil {
-		return fmt.Errorf("creating user: %w", err)
+		return fmt.Errorf("deleting: %w", err)
 	}
 	return nil
 }
@@ -60,7 +60,7 @@ func (s *Service) Delete(ctx context.Context, userID int64) error {
 func (s *Service) Get(ctx context.Context, userID int64) (*Response, error) {
 	u, err := s.repo.Get(ctx, userID)
 	if err != nil {
-		return nil, fmt.Errorf("getting user: %w", err)
+		return nil, fmt.Errorf("getting: %w", err)
 	}
 	return &Response{
 		ID:        u.ID,

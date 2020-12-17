@@ -32,20 +32,29 @@ func RegisterHandlers(log *logger.Logger, s *Server) error {
 	v1 := r.PathPrefix("/v1").Subrouter()
 
 	// Users
-	sr := v1.PathPrefix("/users").Subrouter()
-	sr.HandleFunc("/{id}", s.users.Get).Methods(http.MethodPost)
-	sr.HandleFunc("/{id}", s.users.Update).Methods(http.MethodPost)
-	sr.HandleFunc("/", s.users.Create).Methods(http.MethodPost)
-	sr.HandleFunc("/{id}", s.users.Delete).Methods(http.MethodDelete)
+	{
+		sr := v1.PathPrefix("/users").Subrouter()
+		sr.HandleFunc("/{id}", s.users.Get).Methods(http.MethodPost)
+		sr.HandleFunc("/{id}", s.users.Update).Methods(http.MethodPost)
+		sr.HandleFunc("/", s.users.Create).Methods(http.MethodPost)
+		sr.HandleFunc("/{id}", s.users.Delete).Methods(http.MethodDelete)
+	}
 
 	// Wallets
 	{
 		sr := v1.PathPrefix("/wallets").Subrouter()
-		sr.HandleFunc("/{id}", s.wallets.Create).Methods(http.MethodGet)
+		sr.HandleFunc("/{id}", s.wallets.Get).Methods(http.MethodPost)
 		sr.HandleFunc("/{id}", s.wallets.Update).Methods(http.MethodPost)
 		sr.HandleFunc("/", s.wallets.Create).Methods(http.MethodPost)
 		sr.HandleFunc("/{id}", s.wallets.Delete).Methods(http.MethodDelete)
 	}
+
+	// Transactions
+	// {
+	// 	sr := v1.PathPrefix("/transactions").Subrouter()
+	// 	sr.HandleFunc("/{id}", s.transactions.Get).Methods(http.MethodPost)
+	// 	sr.HandleFunc("/", s.transactions.Create).Methods(http.MethodPost)
+	// }
 
 	s.Handler = r
 

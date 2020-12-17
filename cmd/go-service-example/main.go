@@ -46,7 +46,8 @@ func main() {
 	usersController := users.NewController(log,
 		users.NewService(users.NewRepository(db)), controllers.JSONHelper{})
 
-	walletsController := wallets.NewController(log, controllers.JSONHelper{})
+	walletsController := wallets.NewController(log,
+		wallets.NewService(wallets.NewRepository(db)), controllers.JSONHelper{})
 
 	httpServer := api.NewServer(cnf.API, usersController, walletsController)
 	apiBoot := api.NewBoot(log, httpServer)
