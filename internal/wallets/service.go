@@ -12,14 +12,14 @@ import (
 type Request struct {
 	ID       int64  `json:"id"`
 	UserID   int64  `json:"user_id"`
-	Value    int64  `json:"value"`
+	Amount   int64  `json:"amount"`
 	Currency string `json:"currency"`
 }
 
 type Response struct {
 	ID        int64     `json:"id"`
 	UserID    int64     `json:"user_id"`
-	Value     int64     `json:"value"`
+	Amount    int64     `json:"amount"`
 	Currency  string    `json:"currency"`
 	Deleted   bool      `json:"deleted"`
 	CreatedAt time.Time `json:"created_at"`
@@ -34,10 +34,10 @@ func NewService(repo *Repository) *Service {
 	return &Service{repo: repo}
 }
 
-func (s *Service) Create(ctx context.Context, userID int64, value int64, currency currencies.Currency) (*Response, error) {
+func (s *Service) Create(ctx context.Context, userID int64, amount int64, currency currencies.Currency) (*Response, error) {
 	walletID, err := s.repo.Create(ctx, &Wallet{
 		UserID:    userID,
-		Value:     value * currency.Units(),
+		Amount:    amount,
 		Currency:  currency.String(),
 		Deleted:   false,
 		CreatedAt: time.Now(),
@@ -70,7 +70,7 @@ func (s *Service) Get(ctx context.Context, walletID int64) (*Response, error) {
 	return &Response{
 		ID:        w.ID,
 		UserID:    w.UserID,
-		Value:     w.Value,
+		Amount:    w.Amount,
 		Currency:  w.Currency,
 		Deleted:   w.Deleted,
 		CreatedAt: w.CreatedAt,

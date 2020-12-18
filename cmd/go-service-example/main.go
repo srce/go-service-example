@@ -10,6 +10,7 @@ import (
 	"github.com/dzyanis/go-service-example/internal/api"
 	"github.com/dzyanis/go-service-example/internal/config"
 	"github.com/dzyanis/go-service-example/internal/migrations"
+	"github.com/dzyanis/go-service-example/internal/transactions"
 	"github.com/dzyanis/go-service-example/internal/users"
 	"github.com/dzyanis/go-service-example/internal/wallets"
 	"github.com/dzyanis/go-service-example/pkg/boot"
@@ -43,13 +44,24 @@ func main() {
 		log.Fatal(err)
 	}
 
+	jsonHelper := controllers.JSONHelper{}
+
+	useresRepository := users.NewRepository(db)
 	usersController := users.NewController(log,
-		users.NewService(users.NewRepository(db)), controllers.JSONHelper{})
+		users.NewService(useresRepository), jsonHelper)
 
+	walletsRepository := wallets.NewRepository(db)
 	walletsController := wallets.NewController(log,
-		wallets.NewService(wallets.NewRepository(db)), controllers.JSONHelper{})
+		wallets.NewService(walletsRepository), jsonHelper)
 
-	httpServer := api.NewServer(cnf.API, usersController, walletsController)
+	transactionsRepository := transactions.NewRepository(db)
+	transactionsService := transactions.NewService(log,
+		transactionsRepository, useresRepository, walletsRepository)
+	transactionsController := transactions.NewController(log,
+		transactionsService, jsonHelper)
+
+	httpServer := api.NewServer(cnf.API,
+		usersController, walletsController, transactionsController)
 	apiBoot := api.NewBoot(log, httpServer)
 	if err := runner.Try(&apiBoot, 3, time.Second); err != nil {
 		log.Fatal(err)

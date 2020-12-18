@@ -91,7 +91,7 @@ func (r *Repository) GetByEmail(ctx context.Context, email string) (*User, error
 	user := User{}
 
 	query := `SELECT * FROM users WHERE email = $1 LIMIT 1;`
-	err := r.db.Write().SelectContext(ctx, &user, query, email)
+	err := r.db.Write().GetContext(ctx, &user, query, email)
 	if err != nil {
 		return nil, fmt.Errorf("query row: %w", err)
 	}

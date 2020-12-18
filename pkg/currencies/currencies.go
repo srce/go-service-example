@@ -26,7 +26,7 @@ var currencies = map[Currency]struct {
 
 const (
 	USD Currency = "USD"
-	EUR          = "EUR"
+	EUR Currency = "EUR"
 )
 
 var ErrUnknownCurrency = errors.New("unknown currency")

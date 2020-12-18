@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dzyanis/go-service-example/internal/funds"
+	"github.com/dzyanis/go-service-example/internal/transactions"
 	"github.com/dzyanis/go-service-example/pkg/logger"
 )
 
@@ -75,7 +75,7 @@ var list = []Migrator{
 			`
 
 			now := time.Now()
-			_, err := tx.Exec(query, "Company Beneficiary", funds.CompanyBeneficiaryEmail, false, now, now)
+			_, err := tx.Exec(query, "Company Beneficiary", transactions.CompanyBeneficiaryEmail, false, now, now)
 			if err != nil {
 				return fmt.Errorf("apply: %w", err)
 			}
@@ -83,7 +83,7 @@ var list = []Migrator{
 		},
 		RollbackFunc: func(tx *sql.Tx) error {
 			query := `DELETE FROM users WHERE email = $1;`
-			if _, err := tx.Exec(query, funds.CompanyBeneficiaryEmail); err != nil {
+			if _, err := tx.Exec(query, transactions.CompanyBeneficiaryEmail); err != nil {
 				return fmt.Errorf("rollback: %w", err)
 			}
 			return nil
@@ -97,7 +97,7 @@ var list = []Migrator{
 				CREATE TABLE IF NOT EXISTS wallets (
 					id BIGSERIAL PRIMARY KEY
 					, user_id BIGINT NOT NULL
-					, value BIGINT NOT NULL
+					, amount BIGINT NOT NULL
 					, currency TEXT NOT NULL
 					, deleted BOOLEAN  NOT NULL
 					, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
@@ -111,6 +111,33 @@ var list = []Migrator{
 		},
 		RollbackFunc: func(tx *sql.Tx) error {
 			query := `DROP TABLE IF EXISTS wallets;`
+			if _, err := tx.Exec(query); err != nil {
+				return fmt.Errorf("rollback: %w", err)
+			}
+			return nil
+		},
+	},
+
+	Migration{
+		NameString: "20201216_create_transactions",
+		ApplyFunc: func(tx *sql.Tx) error {
+			query := `
+				CREATE TABLE IF NOT EXISTS transactions (
+					id BIGSERIAL PRIMARY KEY
+					, sender_id BIGINT NOT NULL
+					, beneficiary_id BIGINT NOT NULL
+					, amount BIGINT NOT NULL
+					, currency TEXT NOT NULL
+					, created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+				);`
+
+			if _, err := tx.Exec(query); err != nil {
+				return fmt.Errorf("apply: %w", err)
+			}
+			return nil
+		},
+		RollbackFunc: func(tx *sql.Tx) error {
+			query := `DROP TABLE IF EXISTS transactions;`
 			if _, err := tx.Exec(query); err != nil {
 				return fmt.Errorf("rollback: %w", err)
 			}

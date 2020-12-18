@@ -50,11 +50,11 @@ func RegisterHandlers(log *logger.Logger, s *Server) error {
 	}
 
 	// Transactions
-	// {
-	// 	sr := v1.PathPrefix("/transactions").Subrouter()
-	// 	sr.HandleFunc("/{id}", s.transactions.Get).Methods(http.MethodPost)
-	// 	sr.HandleFunc("/", s.transactions.Create).Methods(http.MethodPost)
-	// }
+	{
+		sr := v1.PathPrefix("/transactions").Subrouter()
+		// sr.HandleFunc("/{id}", s.transactions.Get).Methods(http.MethodPost)
+		sr.HandleFunc("/", s.transactions.Transfer).Methods(http.MethodPost)
+	}
 
 	s.Handler = r
 

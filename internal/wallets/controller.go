@@ -32,7 +32,7 @@ func (c *Controller) Create(w http.ResponseWriter, r *http.Request) {
 		c.helper.Error(w, http.StatusBadRequest, err)
 	}
 
-	value, err := strconv.ParseInt(r.FormValue("value"), 10, 64)
+	amount, err := strconv.ParseInt(r.FormValue("amount"), 10, 64)
 	if err != nil {
 		c.helper.Error(w, http.StatusBadRequest, err)
 	}
@@ -46,7 +46,7 @@ func (c *Controller) Create(w http.ResponseWriter, r *http.Request) {
 		c.helper.Error(w, http.StatusBadRequest, err)
 	}
 
-	resp, err := c.service.Create(r.Context(), userID, value, currency)
+	resp, err := c.service.Create(r.Context(), userID, amount, currency)
 	if err != nil {
 		c.helper.Error(w, http.StatusBadRequest, err)
 		return

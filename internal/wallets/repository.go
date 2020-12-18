@@ -12,7 +12,7 @@ import (
 type Wallet struct {
 	ID        int64     `db:"id"`
 	UserID    int64     `db:"user_id"`
-	Value     int64     `db:"value"`
+	Amount    int64     `db:"amount"`
 	Currency  string    `db:"currency"`
 	Deleted   bool      `db:"deleted"`
 	CreatedAt time.Time `db:"created_at"`
@@ -30,7 +30,7 @@ func NewRepository(db *database.Database) *Repository {
 func (r *Repository) Create(ctx context.Context, w *Wallet) (int64, error) {
 	query := `
 		INSERT INTO wallets
-			(user_id, value, currency, deleted, created_at, updated_at)
+			(user_id, amount, currency, deleted, created_at, updated_at)
 		VALUES
 			($1, $2, $3, $4, $5, $6)
 		RETURNING
@@ -38,7 +38,7 @@ func (r *Repository) Create(ctx context.Context, w *Wallet) (int64, error) {
 	`
 
 	row := r.db.Write().QueryRowContext(ctx, query,
-		w.UserID, w.Value, w.Currency, w.Deleted, w.CreatedAt, w.UpdatedAt)
+		w.UserID, w.Amount, w.Currency, w.Deleted, w.CreatedAt, w.UpdatedAt)
 	if err := row.Err(); err != nil {
 		return 0, fmt.Errorf("query: %w", err)
 	}
@@ -50,9 +50,25 @@ func (r *Repository) Create(ctx context.Context, w *Wallet) (int64, error) {
 	return lastInsertId, nil
 }
 
-func (r *Repository) Update(ctx context.Context, userID int64) error {
-	// TODO: implement
-	return errors.New("not implemented")
+func (r *Repository) Update(ctx context.Context, wallet *Wallet) error {
+	query := `
+		UPDATE wallets
+		SET
+			amount = $1
+		WHERE
+			id = $2;
+	`
+	res, err := r.db.Write().ExecContext(ctx, query, wallet.Amount, wallet.ID)
+	if err != nil {
+		return fmt.Errorf("named exec: %w", err)
+	}
+
+	if n, err := res.RowsAffected(); err != nil {
+		return fmt.Errorf("rows affected: %w", err)
+	} else if n < 0 {
+		return errors.New("no row was affected")
+	}
+	return nil
 }
 
 func (r *Repository) Delete(ctx context.Context, walletID int64) error {
@@ -88,11 +104,18 @@ func (r *Repository) Get(ctx context.Context, walletID int64) (*Wallet, error) {
 	return &wallet, nil
 }
 
-func (r *Repository) GetByUserID(ctx context.Context, userID int64) (*Wallet, error) {
+func (r *Repository) GetByUserIDAndCurrency(ctx context.Context, userID int64, currency string) (*Wallet, error) {
 	wallet := Wallet{}
 
-	query := `SELECT * FROM wallets WHERE user_id = $1 LIMIT 1;`
-	err := r.db.Write().GetContext(ctx, &wallet, query, userID)
+	query := `
+		SELECT * FROM wallets
+		WHERE
+			user_id = $1
+		AND
+			currency = $2
+		LIMIT
+			1;`
+	err := r.db.Write().GetContext(ctx, &wallet, query, userID, currency)
 	if err != nil {
 		return nil, fmt.Errorf("query row: %w", err)
 	}
