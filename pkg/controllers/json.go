@@ -9,6 +9,7 @@ type JSONHelper struct{}
 
 func (j JSONHelper) Response(w http.ResponseWriter, obj interface{}) error {
 	w.WriteHeader(http.StatusOK)
+
 	return toJSON(w, obj)
 }
 

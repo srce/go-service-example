@@ -8,11 +8,13 @@
             "gci",
             "nlreturn",
             "exhaustivestruct",
-            "gocritic",
             "wsl",
             "godox",
-            "godot",
-            "noctx"
+            "gomnd",
+            "errcheck",
+            "funlen",
+            "goerr113",
+            "whitespace"
         ]
     }
 }

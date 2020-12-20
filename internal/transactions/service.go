@@ -73,9 +73,8 @@ func calculate(sender, beneficiary *wallets.Wallet, amount int64, feePercent flo
 	}, feeAmount, nil
 }
 
-func (s *Service) Transfer(ctx context.Context,
-	senderID, beneficiaryID int64, amount float64, currency currencies.Currency) error {
-
+func (s *Service) Transfer(ctx context.Context, senderID, beneficiaryID int64,
+	amount float64, currency currencies.Currency) error {
 	senderWallet, err := s.getWalletByUserID(ctx, senderID, currency)
 	if err != nil {
 		return fmt.Errorf("getting sender wallet: %w", err)
@@ -91,7 +90,7 @@ func (s *Service) Transfer(ctx context.Context,
 	// TODO: needs db transaction
 	trans, fees, err := calculate(senderWallet, beneficiaryWallet, amountUnits, CompanyFeePercent)
 	if err != nil {
-		return fmt.Errorf("transfering: %w", err)
+		return fmt.Errorf("transferring: %w", err)
 	}
 
 	transID, err := s.repo.Create(ctx, trans)
@@ -132,7 +131,8 @@ func (s *Service) Transfer(ctx context.Context,
 	return nil
 }
 
-func (s *Service) getWalletByUserID(ctx context.Context, id int64, currency currencies.Currency) (*wallets.Wallet, error) {
+func (s *Service) getWalletByUserID(ctx context.Context,
+	id int64, currency currencies.Currency) (*wallets.Wallet, error) {
 	user, err := s.repoUsers.Get(ctx, id)
 	if err != nil {
 		return nil, fmt.Errorf("getting user: %w", err)
@@ -146,7 +146,8 @@ func (s *Service) getWalletByUserID(ctx context.Context, id int64, currency curr
 	return wallet, nil
 }
 
-func (s *Service) getWalletByEmail(ctx context.Context, email string, currency currencies.Currency) (*wallets.Wallet, error) {
+func (s *Service) getWalletByEmail(ctx context.Context,
+	email string, currency currencies.Currency) (*wallets.Wallet, error) {
 	companyBeneficiary, err := s.repoUsers.GetByEmail(ctx, email)
 	if err != nil {
 		return nil, fmt.Errorf("getting company beneficiary: %w", err)

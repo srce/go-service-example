@@ -10,9 +10,9 @@ import (
 )
 
 type Controller struct {
-	log     *logger.Logger
-	service *Service
 	helper  controllers.JSONHelper
+	service *Service
+	log     *logger.Logger
 }
 
 func NewController(log *logger.Logger,

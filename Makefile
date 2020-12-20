@@ -9,11 +9,11 @@ vendor:
 .PHONY: vendor
 
 linter:
-	# ./bin/golangci-lint run ./...
+	./bin/golangci-lint run ./...
 .PHONY: linter
 
 test: linter
-	go test ./...
+	env CGO_ENABLED=1 go test -race ./...
 .PHONY: test
 
 build: test vendor

@@ -35,7 +35,7 @@ func (s Migration) Name() string {
 	return s.NameString
 }
 
-// Enumerates all migrations
+// Enumerates all migrations.
 var list = []Migrator{
 	Migration{
 		NameString: "202012151_create_users",

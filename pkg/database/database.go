@@ -6,7 +6,7 @@ import (
 	"strings"
 
 	"github.com/jmoiron/sqlx"
-	// Register postgres driver
+	// Register postgres driver.
 	_ "github.com/lib/pq"
 )
 
@@ -46,17 +46,17 @@ func NewDatabase(cnf Config) *Database {
 	}
 }
 
-// Write returns connection for writing
+// Write returns connection for writing.
 func (db *Database) Write() *sqlx.DB {
 	return db.conn
 }
 
-// Read returns connection for reading
+// Read returns connection for reading.
 func (db *Database) Read() *sqlx.DB {
 	return db.conn
 }
 
-// Open establishes connection to database or returns error
+// Open establishes connection to database or returns error.
 func (db *Database) Open() error {
 	conn, err := sqlx.Open("postgres", db.cnf.Addr())
 	if err != nil {
@@ -73,7 +73,7 @@ func (db *Database) Open() error {
 	return nil
 }
 
-// Close closes current connection to database
+// Close closes current connection to database.
 func (db *Database) Close() error {
 	if err := db.conn.Close(); err != nil {
 		return fmt.Errorf("database close: %w", err)

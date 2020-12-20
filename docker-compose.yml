@@ -9,22 +9,24 @@ services:
       - .:/usr/src/go-service-example
     working_dir: /usr/src/go-service-example
     environment:
-      API_HOST: ${API_HOST}
+      API_HOST: go-service-example
       API_PORT: ${API_PORT}
-      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_HOST: postgresdb
       POSTGRES_PORT: ${POSTGRES_PORT}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
     command: bash -c "go run cmd/go-service-example/main.go"
     ports:
-      - "${API_PORT}:8081"
+      - "${API_PORT}:${API_PORT}"
     depends_on:
-      - postgres
+      - postgresdb
+    links:
+      - postgresdb
     networks:
       example-network:
 
-  postgres:
+  postgresdb:
     image: postgres:13
     hostname: postgres.svc
     container_name: postgres.svc
@@ -34,7 +36,7 @@ services:
       POSTGRES_DB: ${POSTGRES_DB}
       POSTGRES_USER: ${POSTGRES_USER}
     ports:
-      - "${POSTGRES_PORT}:5432"
+      - "${POSTGRES_PORT}:${POSTGRES_PORT}"
     networks:
       example-network:
 

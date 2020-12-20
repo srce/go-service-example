@@ -34,11 +34,12 @@ func NewService(repo *Repository) *Service {
 	return &Service{repo: repo}
 }
 
-func (s *Service) Create(ctx context.Context, userID int64, amount int64, currency currencies.Currency) (*Response, error) {
+func (s *Service) Create(ctx context.Context,
+	userID int64, amount int64, currency currencies.Currency) (*Response, error) {
 	walletID, err := s.repo.Create(ctx, &Wallet{
 		UserID:    userID,
 		Amount:    amount,
-		Currency:  currency.String(),
+		Currency:  string(currency),
 		Deleted:   false,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),

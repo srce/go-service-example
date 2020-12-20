@@ -42,11 +42,11 @@ func (r *Repository) Create(ctx context.Context, u *User) (int64, error) {
 		return 0, fmt.Errorf("query: %w", err)
 	}
 
-	var lastInsertId int64
-	if err := row.Scan(&lastInsertId); err != nil {
+	var lastInsertID int64
+	if err := row.Scan(&lastInsertID); err != nil {
 		return 0, fmt.Errorf("scanning: %w", err)
 	}
-	return lastInsertId, nil
+	return lastInsertID, nil
 }
 
 func (r *Repository) Update(ctx context.Context, userID int64) error {
