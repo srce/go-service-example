@@ -40,5 +40,5 @@ config.copy:
 	cp configs/.env.dist ./.env
 .PHONY: config.copy
 
-setup: golangcilint.download config.copy
+setup: golangcilint.download config.copy vendor
 .PHONY: setup
