@@ -22,23 +22,6 @@ var (
 	ErrSameWallet        = errors.New("same wallet")
 )
 
-type Service struct {
-	log         *logger.Logger
-	repo        *Repository
-	repoUsers   *users.Repository
-	repoWallets *wallets.Repository
-}
-
-func NewService(log *logger.Logger,
-	repo *Repository, repoUsers *users.Repository, repoWallets *wallets.Repository) *Service {
-	return &Service{
-		log:         log,
-		repo:        repo,
-		repoUsers:   repoUsers,
-		repoWallets: repoWallets,
-	}
-}
-
 func fee(amount int64, percent float32) int64 {
 	return int64(float64(amount) / 100 * float64(percent))
 }
@@ -73,6 +56,24 @@ func calculate(sender, beneficiary *wallets.Wallet, amount int64, feePercent flo
 	}, feeAmount, nil
 }
 
+type Service struct {
+	log         *logger.Logger
+	repoTrans   *Repository
+	repoUsers   *users.Repository
+	repoWallets *wallets.Repository
+	uow         UOWStartFunc
+}
+
+func NewService(log *logger.Logger, repoTrans *Repository,
+	repoUsers *users.Repository, repoWallets *wallets.Repository, uow UOWStartFunc) *Service {
+	return &Service{
+		log:         log,
+		repoTrans:   repoTrans,
+		repoUsers:   repoUsers,
+		repoWallets: repoWallets,
+	}
+}
+
 func (s *Service) Transfer(ctx context.Context, senderID, beneficiaryID int64,
 	amount float64, currency currencies.Currency) error {
 	senderWallet, err := s.getWalletByUserID(ctx, senderID, currency)
@@ -87,25 +88,35 @@ func (s *Service) Transfer(ctx context.Context, senderID, beneficiaryID int64,
 
 	amountUnits := units(amount, currency)
 
-	// TODO: needs db transaction
 	trans, fees, err := calculate(senderWallet, beneficiaryWallet, amountUnits, CompanyFeePercent)
 	if err != nil {
 		return fmt.Errorf("transferring: %w", err)
 	}
 
-	transID, err := s.repo.Create(ctx, trans)
+	// Using Unit Of Work Patter for making one transaction with many repositories
+	uow, err := s.uow()
+	if err != nil {
+		return fmt.Errorf("creating uow: %w", err)
+	}
+	defer uow.Rollback()
+
+	_, err = uow.Trans().Create(ctx, trans)
 	if err != nil {
 		return fmt.Errorf("saving transaction: %w", err)
 	}
-	s.log.Printf("transaction %d created", transID)
 
 	if fees > 0 {
-		companyWallet, err := s.getWalletByEmail(ctx, CompanyBeneficiaryEmail, currency)
+		companyBeneficiary, err := uow.Users().GetByEmail(ctx, CompanyBeneficiaryEmail)
 		if err != nil {
-			return fmt.Errorf("getting company wallet: %w", err)
+			return fmt.Errorf("getting company beneficiary: %w", err)
 		}
 
-		transID, err = s.repo.Create(ctx, &Transaction{
+		companyWallet, err := uow.Wallets().GetByUserIDAndCurrency(ctx, companyBeneficiary.ID, currency.String())
+		if err != nil {
+			return fmt.Errorf("getting wallet: %w", err)
+		}
+
+		_, err = uow.Trans().Create(ctx, &Transaction{
 			SenderID:      senderWallet.ID,
 			BeneficiaryID: companyWallet.ID,
 			Amount:        fees,
@@ -114,18 +125,23 @@ func (s *Service) Transfer(ctx context.Context, senderID, beneficiaryID int64,
 		if err != nil {
 			return fmt.Errorf("saving fee transaction: %w", err)
 		}
-		s.log.Printf("transaction %d created", transID)
-	}
 
+		companyWallet.Amount += fees
+		if err = uow.Wallets().Update(ctx, companyWallet); err != nil {
+			return fmt.Errorf("update sender wallet: %w", err)
+		}
+	}
 	// Updating wallets
-	err = s.repoWallets.Update(ctx, senderWallet)
-	if err != nil {
+	if err = uow.Wallets().Update(ctx, senderWallet); err != nil {
 		return fmt.Errorf("update sender wallet: %w", err)
 	}
 
-	err = s.repoWallets.Update(ctx, beneficiaryWallet)
-	if err != nil {
+	if err = uow.Wallets().Update(ctx, beneficiaryWallet); err != nil {
 		return fmt.Errorf("update sender wallet: %w", err)
+	}
+
+	if err := uow.Commit(); err != nil {
+		return fmt.Errorf("uof commit: %w", err)
 	}
 
 	return nil
@@ -139,21 +155,6 @@ func (s *Service) getWalletByUserID(ctx context.Context,
 	}
 
 	wallet, err := s.repoWallets.GetByUserIDAndCurrency(ctx, user.ID, currency.String())
-	if err != nil {
-		return nil, fmt.Errorf("getting wallet: %w", err)
-	}
-
-	return wallet, nil
-}
-
-func (s *Service) getWalletByEmail(ctx context.Context,
-	email string, currency currencies.Currency) (*wallets.Wallet, error) {
-	companyBeneficiary, err := s.repoUsers.GetByEmail(ctx, email)
-	if err != nil {
-		return nil, fmt.Errorf("getting company beneficiary: %w", err)
-	}
-
-	wallet, err := s.repoWallets.GetByUserIDAndCurrency(ctx, companyBeneficiary.ID, currency.String())
 	if err != nil {
 		return nil, fmt.Errorf("getting wallet: %w", err)
 	}

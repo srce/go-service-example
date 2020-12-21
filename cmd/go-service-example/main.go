@@ -31,13 +31,13 @@ func main() {
 		log.Fatal(err)
 	}
 
-	db := database.NewDatabase(cnf.Postgres)
+	db := database.NewPostgres(cnf.Postgres)
 	dbBoot := database.NewBoot(db)
 	if err := runner.Try(&dbBoot, 10, time.Second); err != nil {
 		log.Fatal(err)
 	}
 
-	schema := migrations.NewSchema(db.Write(),
+	schema := migrations.NewSchema(db.Connection(),
 		database.DefaultSchemaName, database.DefaultMigrationTableName)
 	migratBoot := migrations.NewBoot(log, schema)
 	if err := runner.Once(&migratBoot); err != nil {
@@ -54,9 +54,13 @@ func main() {
 	walletsController := wallets.NewController(log,
 		wallets.NewService(walletsRepository), jsonHelper)
 
+	startUOW := func() (*transactions.UOW, error) {
+		return transactions.NewUOW(db.Connection())
+	}
+
 	transactionsRepository := transactions.NewRepository(db)
 	transactionsService := transactions.NewService(log,
-		transactionsRepository, useresRepository, walletsRepository)
+		transactionsRepository, useresRepository, walletsRepository, startUOW)
 	transactionsController := transactions.NewController(log,
 		transactionsService, jsonHelper)
 

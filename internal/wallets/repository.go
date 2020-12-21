@@ -20,10 +20,10 @@ type Wallet struct {
 }
 
 type Repository struct {
-	db *database.Database
+	db database.Database
 }
 
-func NewRepository(db *database.Database) *Repository {
+func NewRepository(db database.Database) *Repository {
 	return &Repository{db: db}
 }
 
@@ -37,17 +37,16 @@ func (r *Repository) Create(ctx context.Context, w *Wallet) (int64, error) {
 			id;
 	`
 
-	row := r.db.Write().QueryRowContext(ctx, query,
+	res := struct {
+		LastInsertID int64 `db:"id"`
+	}{}
+	err := r.db.Write().GetContext(ctx, &res, query,
 		w.UserID, w.Amount, w.Currency, w.Deleted, w.CreatedAt, w.UpdatedAt)
-	if err := row.Err(); err != nil {
-		return 0, fmt.Errorf("query: %w", err)
+	if err != nil {
+		return 0, fmt.Errorf("getting: %w", err)
 	}
 
-	var lastInsertID int64
-	if err := row.Scan(&lastInsertID); err != nil {
-		return 0, fmt.Errorf("scanning: %w", err)
-	}
-	return lastInsertID, nil
+	return res.LastInsertID, nil
 }
 
 func (r *Repository) Update(ctx context.Context, wallet *Wallet) error {

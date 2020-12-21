@@ -3,90 +3,34 @@ package database
 import (
 	"context"
 	"fmt"
-	"strings"
 
 	"github.com/jmoiron/sqlx"
 	// Register postgres driver.
 	_ "github.com/lib/pq"
 )
 
-type Config struct {
-	Host           string   `env:"POSTGRES_HOST"`
-	Port           int      `env:"POSTGRES_PORT"`
-	User           string   `env:"POSTGRES_USER"`
-	Password       string   `env:"POSTGRES_PASSWORD"`
-	DB             string   `env:"POSTGRES_DB"`
-	Options        []string `env:"POSTGRES_OPTIONS"`
-	MaxConnections int      `env:"POSTGRES_MAX_CONN"`
-}
-
-func (c Config) Addr() string {
-	addr := fmt.Sprintf("postgresql://%s:%s@%s:%d/%s", c.User, c.Password, c.Host, c.Port, c.DB)
-	if len(c.Options) > 0 {
-		addr += "?" + strings.Join(c.Options, ",")
-	}
-
-	return addr
-}
-
 const (
 	DefaultMigrationTableName string = "schema_migrations"
 	DefaultSchemaName         string = "public"
 )
 
-type Database struct {
-	cnf  Config
-	conn *sqlx.DB
+type Ext interface {
+	sqlx.ExtContext
+	GetContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error
 }
 
-func NewDatabase(cnf Config) *Database {
-	return &Database{
-		cnf:  cnf,
-		conn: &sqlx.DB{},
-	}
-}
-
-// Write returns connection for writing.
-func (db *Database) Write() *sqlx.DB {
-	return db.conn
-}
-
-// Read returns connection for reading.
-func (db *Database) Read() *sqlx.DB {
-	return db.conn
-}
-
-// Open establishes connection to database or returns error.
-func (db *Database) Open() error {
-	conn, err := sqlx.Open("postgres", db.cnf.Addr())
-	if err != nil {
-		return fmt.Errorf("database opening connection: %w", err)
-	}
-	db.conn = conn
-
-	if err := db.conn.Ping(); err != nil {
-		return fmt.Errorf("database ping: %w", err)
-	}
-
-	db.conn.SetMaxIdleConns(db.cnf.MaxConnections)
-
-	return nil
-}
-
-// Close closes current connection to database.
-func (db *Database) Close() error {
-	if err := db.conn.Close(); err != nil {
-		return fmt.Errorf("database close: %w", err)
-	}
-
-	return nil
+type Database interface {
+	Write() Ext
+	Read() Ext
+	Open() error
+	Close() error
 }
 
 type Boot struct {
-	db *Database
+	db Database
 }
 
-func NewBoot(db *Database) Boot {
+func NewBoot(db Database) Boot {
 	return Boot{db: db}
 }
 
@@ -109,3 +53,45 @@ func (b Boot) Stop() error {
 
 	return nil
 }
+
+// type DB interface {
+// 	PrepareNamedContext(ctx context.Context, query string) (*sqlx.NamedStmt, error)
+// 	NamedQueryContext(ctx context.Context, query string, arg interface{}) (*sqlx.Rows, error)
+// 	NamedExecContext(ctx context.Context, query string, arg interface{}) (sql.Result, error)
+// 	SelectContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error
+// 	GetContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error
+// 	PreparexContext(ctx context.Context, query string) (*sqlx.Stmt, error)
+// 	QueryxContext(ctx context.Context, query string, args ...interface{}) (*sqlx.Rows, error)
+// 	QueryRowxContext(ctx context.Context, query string, args ...interface{}) *sqlx.Row
+// 	MustBeginTx(ctx context.Context, opts *sql.TxOptions) *sqlx.Tx
+// 	MustExecContext(ctx context.Context, query string, args ...interface{}) sql.Result
+// 	BeginTxx(ctx context.Context, opts *sql.TxOptions) (*sqlx.Tx, error)
+// }
+
+// type Tx interface {
+// 	StmtxContext(ctx context.Context, stmt interface{}) *sqlx.Stmt
+// 	NamedStmtContext(ctx context.Context, stmt *sqlx.NamedStmt) *sqlx.NamedStmt
+// 	PreparexContext(ctx context.Context, query string) (*sqlx.Stmt, error)
+// 	PrepareNamedContext(ctx context.Context, query string) (*sqlx.NamedStmt, error)
+// 	MustExecContext(ctx context.Context, query string, args ...interface{}) sql.Result
+// 	QueryxContext(ctx context.Context, query string, args ...interface{}) (*sqlx.Rows, error)
+// 	SelectContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error
+// 	GetContext(ctx context.Context, dest interface{}, query string, args ...interface{}) error
+// 	QueryRowxContext(ctx context.Context, query string, args ...interface{}) *sqlx.Row
+// 	NamedExecContext(ctx context.Context, query string, arg interface{}) (sql.Result, error)
+// }
+
+// type SMTP interface {
+// 	SelectContext(ctx context.Context, dest interface{}, args ...interface{}) error
+// 	GetContext(ctx context.Context, dest interface{}, args ...interface{}) error
+// 	MustExecContext(ctx context.Context, args ...interface{}) sql.Result
+// 	QueryRowxContext(ctx context.Context, args ...interface{}) *sqlx.Row
+// 	QueryxContext(ctx context.Context, args ...interface{}) (*sqlx.Rows, error)
+// }
+
+// type qStmt interface {
+// 	QueryContext(ctx context.Context, query string, args ...interface{}) (*sql.Rows, error)
+// 	QueryxContext(ctx context.Context, query string, args ...interface{}) (*sqlx.Rows, error)
+// 	QueryRowxContext(ctx context.Context, query string, args ...interface{})
+// 	ExecContext(ctx context.Context, query string, args ...interface{})
+// }

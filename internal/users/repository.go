@@ -19,10 +19,10 @@ type User struct {
 }
 
 type Repository struct {
-	db *database.Database
+	db database.Database
 }
 
-func NewRepository(db *database.Database) *Repository {
+func NewRepository(db database.Database) *Repository {
 	return &Repository{db: db}
 }
 
@@ -36,17 +36,16 @@ func (r *Repository) Create(ctx context.Context, u *User) (int64, error) {
 			id;
 	`
 
-	row := r.db.Write().QueryRowContext(ctx, query,
+	res := struct {
+		LastInsertID int64 `db:"id"`
+	}{}
+	err := r.db.Write().GetContext(ctx, &res, query,
 		u.Name, u.Email, u.Deleted, u.CreatedAt, u.UpdatedAt)
-	if err := row.Err(); err != nil {
+	if err != nil {
 		return 0, fmt.Errorf("query: %w", err)
 	}
 
-	var lastInsertID int64
-	if err := row.Scan(&lastInsertID); err != nil {
-		return 0, fmt.Errorf("scanning: %w", err)
-	}
-	return lastInsertID, nil
+	return res.LastInsertID, nil
 }
 
 func (r *Repository) Update(ctx context.Context, userID int64) error {
@@ -76,9 +75,11 @@ func (r *Repository) Delete(ctx context.Context, userID int64) error {
 }
 
 func (r *Repository) Get(ctx context.Context, userID int64) (*User, error) {
-	user := User{}
+	var (
+		user  = User{}
+		query = `SELECT * FROM users WHERE id = $1 LIMIT 1;`
+	)
 
-	query := `SELECT * FROM users WHERE id = $1 LIMIT 1;`
 	err := r.db.Write().GetContext(ctx, &user, query, userID)
 	if err != nil {
 		return nil, fmt.Errorf("query row: %w", err)
@@ -88,9 +89,10 @@ func (r *Repository) Get(ctx context.Context, userID int64) (*User, error) {
 }
 
 func (r *Repository) GetByEmail(ctx context.Context, email string) (*User, error) {
-	user := User{}
-
-	query := `SELECT * FROM users WHERE email = $1 LIMIT 1;`
+	var (
+		user  = User{}
+		query = `SELECT * FROM users WHERE email = $1 LIMIT 1;`
+	)
 	err := r.db.Write().GetContext(ctx, &user, query, email)
 	if err != nil {
 		return nil, fmt.Errorf("query row: %w", err)
