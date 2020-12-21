@@ -5,10 +5,10 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/dzyanis/go-service-example/pkg/controllers"
-	"github.com/dzyanis/go-service-example/pkg/currencies"
-	"github.com/dzyanis/go-service-example/pkg/logger"
 	"github.com/gorilla/mux"
+
+	"github.com/dzyanis/go-service-example/pkg/controllers"
+	"github.com/dzyanis/go-service-example/pkg/logger"
 )
 
 type Controller struct {
@@ -27,26 +27,19 @@ func NewController(log *logger.Logger,
 }
 
 func (c *Controller) Create(w http.ResponseWriter, r *http.Request) {
-	userID, err := strconv.ParseInt(r.FormValue("user_id"), 10, 64)
+	userID, err := controllers.FormInt64(r, "user_id")
 	if err != nil {
 		c.helper.Error(w, http.StatusBadRequest, err)
+		return
 	}
 
-	amount, err := strconv.ParseInt(r.FormValue("amount"), 10, 64)
+	amount, err := controllers.FormValueAmount(r)
 	if err != nil {
 		c.helper.Error(w, http.StatusBadRequest, err)
+		return
 	}
 
-	currencyName := r.FormValue("currency")
-	if err != nil {
-		c.helper.Error(w, http.StatusBadRequest, err)
-	}
-	currency, err := currencies.FromString(currencyName)
-	if err != nil {
-		c.helper.Error(w, http.StatusBadRequest, err)
-	}
-
-	resp, err := c.service.Create(r.Context(), userID, amount, currency)
+	resp, err := c.service.Create(r.Context(), userID, amount)
 	if err != nil {
 		c.helper.Error(w, http.StatusBadRequest, err)
 		return

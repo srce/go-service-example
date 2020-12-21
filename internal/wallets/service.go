@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/dzyanis/go-service-example/pkg/currencies"
+	"github.com/dzyanis/go-service-example/pkg/money"
 )
 
 type Request struct {
@@ -35,11 +35,11 @@ func NewService(repo *Repository) *Service {
 }
 
 func (s *Service) Create(ctx context.Context,
-	userID int64, amount int64, currency currencies.Currency) (*Response, error) {
+	userID int64, amount money.Money) (*Response, error) {
 	walletID, err := s.repo.Create(ctx, &Wallet{
 		UserID:    userID,
-		Amount:    amount,
-		Currency:  string(currency),
+		Amount:    amount.Units(),
+		Currency:  amount.Currency().String(),
 		Deleted:   false,
 		CreatedAt: time.Now(),
 		UpdatedAt: time.Now(),

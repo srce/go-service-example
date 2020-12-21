@@ -5,46 +5,28 @@ import (
 
 	"github.com/dzyanis/go-service-example/internal/wallets"
 	"github.com/dzyanis/go-service-example/pkg/currencies"
+	"github.com/dzyanis/go-service-example/pkg/money"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
-func Test_fee(t *testing.T) {
-	cases := []struct {
-		amount int64
-		fee    float32
-		expect int64
-	}{
-		{amount: 1, fee: 0, expect: 0},
-		{amount: 0, fee: 1, expect: 0},
-		{amount: 1, fee: 5, expect: 0},
-		{amount: 1, fee: 100, expect: 1},
-		{amount: 1, fee: 1000, expect: 10},
-		{amount: 10, fee: 5, expect: 0},
-		{amount: 100, fee: 5, expect: 5},
-		{amount: 1000, fee: 5, expect: 50},
-		{amount: 10000, fee: 1.25, expect: 125},
-		{amount: 1000000, fee: 5, expect: 50000},
-		{amount: 1000000, fee: 500, expect: 5000000},
-		{amount: 1000000, fee: 33.33, expect: 333300},
-	}
-
-	for _, tc := range cases {
-		got := fee(tc.amount, tc.fee)
-		assert.Equal(t, tc.expect, got)
-	}
+func usd(tb testing.TB, value float64) money.Money {
+	m, err := money.FromFloat64(value, currencies.USD)
+	require.NoErrorf(tb, err, "usd %f", value)
+	return m
 }
 
 func Test_calculate(t *testing.T) {
 	type args struct {
 		sender      *wallets.Wallet
 		beneficiary *wallets.Wallet
-		amount      int64
-		feePercent  float32
+		amount      money.Money
+		feePercent  float64
 	}
 
 	type exp struct {
 		trans  *Transaction
-		fee    int64
+		fee    money.Money
 		failed bool
 	}
 
@@ -72,7 +54,7 @@ func Test_calculate(t *testing.T) {
 				beneficiary: &wallets.Wallet{
 					Currency: currencies.USD.String(),
 				},
-				amount:     42,
+				amount:     usd(t, 42),
 				feePercent: 0,
 			},
 			exp: exp{failed: true},
@@ -100,23 +82,23 @@ func Test_calculate(t *testing.T) {
 			args: args{
 				sender: &wallets.Wallet{
 					ID:       1,
-					Amount:   1000,
+					Amount:   10000,
 					Currency: currencies.USD.String(),
 				},
 				beneficiary: &wallets.Wallet{
 					ID:       2,
-					Amount:   1000,
+					Amount:   10000,
 					Currency: currencies.USD.String(),
 				},
-				amount:     10,
+				amount:     usd(t, 10),
 				feePercent: 10,
 			},
 			exp: exp{
-				fee: 1,
+				fee: usd(t, 1),
 				trans: &Transaction{
 					SenderID:      1,
 					BeneficiaryID: 2,
-					Amount:        10,
+					Amount:        1000,
 					Currency:      currencies.USD.String(),
 				},
 			},

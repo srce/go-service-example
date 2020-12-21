@@ -30,7 +30,7 @@ func (r *Repository) Create(ctx context.Context, t *Transaction) (int64, error) 
 		INSERT INTO transactions
 			(sender_id, beneficiary_id, amount, currency)
 		VALUES
-			($1, $2, $3, $4, $5)
+			($1, $2, $3, $4)
 		RETURNING
 			id;
 	`

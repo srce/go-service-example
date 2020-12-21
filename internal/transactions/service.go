@@ -9,6 +9,7 @@ import (
 	"github.com/dzyanis/go-service-example/internal/wallets"
 	"github.com/dzyanis/go-service-example/pkg/currencies"
 	"github.com/dzyanis/go-service-example/pkg/logger"
+	"github.com/dzyanis/go-service-example/pkg/money"
 )
 
 const (
@@ -17,43 +18,38 @@ const (
 )
 
 var (
-	ErrDifferentCurrency = errors.New("different currency")
 	ErrInsufficientFunds = errors.New("insufficient funds")
 	ErrSameWallet        = errors.New("same wallet")
 )
 
-func fee(amount int64, percent float32) int64 {
-	return int64(float64(amount) / 100 * float64(percent))
-}
-
-func units(a float64, currency currencies.Currency) int64 {
-	u := a * float64(currency.Units())
-	return int64(u)
-}
-
-func calculate(sender, beneficiary *wallets.Wallet, amount int64, feePercent float32) (*Transaction, int64, error) {
-	if sender.Currency != beneficiary.Currency {
-		return nil, 0, ErrDifferentCurrency
-	}
+func calculate(sender, beneficiary *wallets.Wallet,
+	amount money.Money, feePercent float64) (*Transaction, money.Money, error) {
+	var (
+		currency = amount.Currency()
+		zero     = money.Zero(currency)
+		fee      = amount.Percent(feePercent)
+	)
 
 	if sender.ID == beneficiary.ID {
-		return nil, 0, ErrSameWallet
+		return nil, zero, ErrSameWallet
 	}
 
-	feeAmount := fee(amount, feePercent)
-	amountWithFee := amount + feeAmount
-
-	if sender.Amount < amountWithFee {
-		return nil, 0, ErrInsufficientFunds
+	amountWithFee, err := amount.Add(fee)
+	if err != nil {
+		return nil, zero, fmt.Errorf("adding: %w", err)
 	}
-	sender.Amount -= amountWithFee
-	beneficiary.Amount += amount
+
+	if sender.Amount < amountWithFee.Units() {
+		return nil, zero, ErrInsufficientFunds
+	}
+	sender.Amount -= amountWithFee.Units()
+	beneficiary.Amount += amount.Units()
 	return &Transaction{
 		SenderID:      sender.ID,
 		BeneficiaryID: beneficiary.ID,
-		Amount:        amount,
-		Currency:      sender.Currency,
-	}, feeAmount, nil
+		Amount:        amount.Units(),
+		Currency:      amount.Currency().String(),
+	}, fee, nil
 }
 
 type Service struct {
@@ -71,24 +67,23 @@ func NewService(log *logger.Logger, repoTrans *Repository,
 		repoTrans:   repoTrans,
 		repoUsers:   repoUsers,
 		repoWallets: repoWallets,
+		uow:         uow,
 	}
 }
 
-func (s *Service) Transfer(ctx context.Context, senderID, beneficiaryID int64,
-	amount float64, currency currencies.Currency) error {
-	senderWallet, err := s.getWalletByUserID(ctx, senderID, currency)
+func (s *Service) Transfer(ctx context.Context,
+	senderID, beneficiaryID int64, amount money.Money) error {
+	senderWallet, err := s.getWalletByUserID(ctx, senderID, amount.Currency())
 	if err != nil {
 		return fmt.Errorf("getting sender wallet: %w", err)
 	}
 
-	beneficiaryWallet, err := s.getWalletByUserID(ctx, beneficiaryID, currency)
+	beneficiaryWallet, err := s.getWalletByUserID(ctx, beneficiaryID, amount.Currency())
 	if err != nil {
 		return fmt.Errorf("getting beneficiary wallet: %w", err)
 	}
 
-	amountUnits := units(amount, currency)
-
-	trans, fees, err := calculate(senderWallet, beneficiaryWallet, amountUnits, CompanyFeePercent)
+	trans, fees, err := calculate(senderWallet, beneficiaryWallet, amount, CompanyFeePercent)
 	if err != nil {
 		return fmt.Errorf("transferring: %w", err)
 	}
@@ -105,13 +100,14 @@ func (s *Service) Transfer(ctx context.Context, senderID, beneficiaryID int64,
 		return fmt.Errorf("saving transaction: %w", err)
 	}
 
-	if fees > 0 {
+	if fees.Units() > 0 {
 		companyBeneficiary, err := uow.Users().GetByEmail(ctx, CompanyBeneficiaryEmail)
 		if err != nil {
 			return fmt.Errorf("getting company beneficiary: %w", err)
 		}
 
-		companyWallet, err := uow.Wallets().GetByUserIDAndCurrency(ctx, companyBeneficiary.ID, currency.String())
+		companyWallet, err := uow.Wallets().GetByUserIDAndCurrency(ctx,
+			companyBeneficiary.ID, amount.Currency().String())
 		if err != nil {
 			return fmt.Errorf("getting wallet: %w", err)
 		}
@@ -119,14 +115,14 @@ func (s *Service) Transfer(ctx context.Context, senderID, beneficiaryID int64,
 		_, err = uow.Trans().Create(ctx, &Transaction{
 			SenderID:      senderWallet.ID,
 			BeneficiaryID: companyWallet.ID,
-			Amount:        fees,
-			Currency:      senderWallet.Currency,
+			Amount:        fees.Units(),
+			Currency:      fees.Currency().String(),
 		})
 		if err != nil {
 			return fmt.Errorf("saving fee transaction: %w", err)
 		}
 
-		companyWallet.Amount += fees
+		companyWallet.Amount += fees.Units()
 		if err = uow.Wallets().Update(ctx, companyWallet); err != nil {
 			return fmt.Errorf("update sender wallet: %w", err)
 		}
