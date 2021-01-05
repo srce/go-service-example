@@ -6,37 +6,21 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/dzyanis/go-service-example/internal/wallets"
 	"github.com/dzyanis/go-service-example/pkg/money"
 )
 
-type Request struct {
-	ID       int64  `json:"id"`
-	UserID   int64  `json:"user_id"`
-	Amount   int64  `json:"amount"`
-	Currency string `json:"currency"`
-}
-
-type Response struct {
-	ID        int64     `json:"id"`
-	UserID    int64     `json:"user_id"`
-	Amount    int64     `json:"amount"`
-	Currency  string    `json:"currency"`
-	Deleted   bool      `json:"deleted"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
 type Service struct {
-	repo *Repository
+	repo wallets.Repository
 }
 
-func NewService(repo *Repository) *Service {
+func NewService(repo wallets.Repository) *Service {
 	return &Service{repo: repo}
 }
 
 func (s *Service) Create(ctx context.Context,
-	userID int64, amount money.Money) (*Response, error) {
-	walletID, err := s.repo.Create(ctx, &Wallet{
+	userID int64, amount money.Money) (*wallets.Response, error) {
+	walletID, err := s.repo.Create(ctx, &wallets.Wallet{
 		UserID:    userID,
 		Amount:    amount.Units(),
 		Currency:  amount.Currency().String(),
@@ -51,7 +35,7 @@ func (s *Service) Create(ctx context.Context,
 	return s.Get(ctx, walletID)
 }
 
-func (s *Service) Update(ctx context.Context, r Request) error {
+func (s *Service) Update(ctx context.Context, r wallets.Request) error {
 	// TODO: implement
 	return errors.New("not implemented")
 }
@@ -63,12 +47,12 @@ func (s *Service) Delete(ctx context.Context, walletID int64) error {
 	return nil
 }
 
-func (s *Service) Get(ctx context.Context, walletID int64) (*Response, error) {
+func (s *Service) Get(ctx context.Context, walletID int64) (*wallets.Response, error) {
 	w, err := s.repo.Get(ctx, walletID)
 	if err != nil {
 		return nil, fmt.Errorf("getting: %w", err)
 	}
-	return &Response{
+	return &wallets.Response{
 		ID:        w.ID,
 		UserID:    w.UserID,
 		Amount:    w.Amount,

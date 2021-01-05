@@ -4,20 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
+	"github.com/dzyanis/go-service-example/internal/wallets"
 	"github.com/dzyanis/go-service-example/pkg/database"
 )
-
-type Wallet struct {
-	ID        int64     `db:"id"`
-	UserID    int64     `db:"user_id"`
-	Amount    int64     `db:"amount"`
-	Currency  string    `db:"currency"`
-	Deleted   bool      `db:"deleted"`
-	CreatedAt time.Time `db:"created_at"`
-	UpdatedAt time.Time `db:"updated_at"`
-}
 
 type Repository struct {
 	db database.Database
@@ -27,7 +17,7 @@ func NewRepository(db database.Database) *Repository {
 	return &Repository{db: db}
 }
 
-func (r *Repository) Create(ctx context.Context, w *Wallet) (int64, error) {
+func (r *Repository) Create(ctx context.Context, w *wallets.Wallet) (int64, error) {
 	query := `
 		INSERT INTO wallets
 			(user_id, amount, currency, deleted, created_at, updated_at)
@@ -49,7 +39,7 @@ func (r *Repository) Create(ctx context.Context, w *Wallet) (int64, error) {
 	return res.LastInsertID, nil
 }
 
-func (r *Repository) Update(ctx context.Context, wallet *Wallet) error {
+func (r *Repository) Update(ctx context.Context, wallet *wallets.Wallet) error {
 	query := `
 		UPDATE wallets
 		SET
@@ -91,8 +81,8 @@ func (r *Repository) Delete(ctx context.Context, walletID int64) error {
 	return nil
 }
 
-func (r *Repository) Get(ctx context.Context, walletID int64) (*Wallet, error) {
-	wallet := Wallet{}
+func (r *Repository) Get(ctx context.Context, walletID int64) (*wallets.Wallet, error) {
+	wallet := wallets.Wallet{}
 
 	query := `SELECT * FROM wallets WHERE id = $1 LIMIT 1;`
 	err := r.db.Write().GetContext(ctx, &wallet, query, walletID)
@@ -103,8 +93,9 @@ func (r *Repository) Get(ctx context.Context, walletID int64) (*Wallet, error) {
 	return &wallet, nil
 }
 
-func (r *Repository) GetByUserIDAndCurrency(ctx context.Context, userID int64, currency string) (*Wallet, error) {
-	wallet := Wallet{}
+func (r *Repository) GetByUserIDAndCurrency(
+	ctx context.Context, userID int64, currency string) (*wallets.Wallet, error) {
+	wallet := wallets.Wallet{}
 
 	query := `
 		SELECT * FROM wallets

@@ -14,7 +14,9 @@ import (
 	usersControllers "github.com/dzyanis/go-service-example/internal/users/controllers"
 	usersRepositories "github.com/dzyanis/go-service-example/internal/users/repositories"
 	usersServices "github.com/dzyanis/go-service-example/internal/users/services"
-	"github.com/dzyanis/go-service-example/internal/wallets"
+	walletsControllers "github.com/dzyanis/go-service-example/internal/wallets/controllers"
+	walletsRepositories "github.com/dzyanis/go-service-example/internal/wallets/repositories"
+	walletsServices "github.com/dzyanis/go-service-example/internal/wallets/services"
 	"github.com/dzyanis/go-service-example/pkg/boot"
 	"github.com/dzyanis/go-service-example/pkg/controllers"
 	"github.com/dzyanis/go-service-example/pkg/database"
@@ -52,9 +54,9 @@ func main() {
 	usersController := usersControllers.NewController(log,
 		usersServices.NewService(usersRepository), jsonHelper)
 
-	walletsRepository := wallets.NewRepository(db)
-	walletsController := wallets.NewController(log,
-		wallets.NewService(walletsRepository), jsonHelper)
+	walletsRepository := walletsRepositories.NewRepository(db)
+	walletsController := walletsControllers.NewController(log,
+		walletsServices.NewService(walletsRepository), jsonHelper)
 
 	startUOW := func() (*transactions.UOW, error) {
 		return transactions.NewUOW(db.Connection())

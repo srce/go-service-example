@@ -6,6 +6,7 @@ import (
 	"github.com/dzyanis/go-service-example/internal/users"
 	usersRepositories "github.com/dzyanis/go-service-example/internal/users/repositories"
 	"github.com/dzyanis/go-service-example/internal/wallets"
+	walletsRepositories "github.com/dzyanis/go-service-example/internal/wallets/repositories"
 	"github.com/dzyanis/go-service-example/pkg/database"
 	"github.com/jmoiron/sqlx"
 )
@@ -16,7 +17,7 @@ type UOW struct {
 	tx      *database.Transaction
 	trans   *Repository
 	users   users.Repository
-	wallets *wallets.Repository
+	wallets wallets.Repository
 }
 
 func NewUOW(dbc *sqlx.DB) (*UOW, error) {
@@ -30,13 +31,13 @@ func NewUOW(dbc *sqlx.DB) (*UOW, error) {
 		tx:      db,
 		trans:   NewRepository(db),
 		users:   usersRepositories.NewRepository(db),
-		wallets: wallets.NewRepository(db),
+		wallets: walletsRepositories.NewRepository(db),
 	}, nil
 }
 
-func (u *UOW) Trans() *Repository           { return u.trans }
-func (u *UOW) Users() users.Repository      { return u.users }
-func (u *UOW) Wallets() *wallets.Repository { return u.wallets }
+func (u *UOW) Trans() *Repository          { return u.trans }
+func (u *UOW) Users() users.Repository     { return u.users }
+func (u *UOW) Wallets() wallets.Repository { return u.wallets }
 
 func (u *UOW) Commit() error   { return u.tx.Commit() }
 func (u *UOW) Rollback() error { return u.tx.Rollback() }
