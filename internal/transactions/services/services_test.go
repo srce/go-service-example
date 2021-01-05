@@ -1,4 +1,4 @@
-package transactions
+package services
 
 import (
 	"testing"

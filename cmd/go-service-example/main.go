@@ -10,15 +10,15 @@ import (
 	"github.com/dzyanis/go-service-example/internal/api"
 	"github.com/dzyanis/go-service-example/internal/config"
 	"github.com/dzyanis/go-service-example/internal/migrations"
-	transactionsControllers "github.com/dzyanis/go-service-example/internal/transactions/controllers"
-	transactionsRepositories "github.com/dzyanis/go-service-example/internal/transactions/repositories"
-	transactionsServices "github.com/dzyanis/go-service-example/internal/transactions/services"
+	transControllers "github.com/dzyanis/go-service-example/internal/transactions/controllers"
+	transRepos "github.com/dzyanis/go-service-example/internal/transactions/repositories"
+	transServices "github.com/dzyanis/go-service-example/internal/transactions/services"
 	"github.com/dzyanis/go-service-example/internal/transactions/uow"
 	usersControllers "github.com/dzyanis/go-service-example/internal/users/controllers"
-	usersRepositories "github.com/dzyanis/go-service-example/internal/users/repositories"
+	usersRepos "github.com/dzyanis/go-service-example/internal/users/repositories"
 	usersServices "github.com/dzyanis/go-service-example/internal/users/services"
 	walletsControllers "github.com/dzyanis/go-service-example/internal/wallets/controllers"
-	walletsRepositories "github.com/dzyanis/go-service-example/internal/wallets/repositories"
+	walletsRepos "github.com/dzyanis/go-service-example/internal/wallets/repositories"
 	walletsServices "github.com/dzyanis/go-service-example/internal/wallets/services"
 	"github.com/dzyanis/go-service-example/pkg/boot"
 	"github.com/dzyanis/go-service-example/pkg/controllers"
@@ -53,22 +53,22 @@ func main() {
 
 	jsonHelper := controllers.JSONHelper{}
 
-	usersRepository := usersRepositories.NewRepository(db)
+	usersRepository := usersRepos.NewRepository(db)
 	usersController := usersControllers.NewController(log,
 		usersServices.NewService(usersRepository), jsonHelper)
 
-	walletsRepository := walletsRepositories.NewRepository(db)
+	walletsRepository := walletsRepos.NewRepository(db)
 	walletsController := walletsControllers.NewController(log,
 		walletsServices.NewService(walletsRepository), jsonHelper)
 
-	startUOW := func() (*uow.UOW, error) {
-		return uow.NewUOW(db.Connection())
+	startUOW := func() (uow.UnitOfWork, error) {
+		return uow.NewRepository(db.Connection())
 	}
 
-	transactionsRepository := transactionsRepositories.NewRepository(db)
-	transactionsService := transactionsServices.NewService(log,
+	transactionsRepository := transRepos.NewRepository(db)
+	transactionsService := transServices.NewService(log,
 		transactionsRepository, usersRepository, walletsRepository, startUOW)
-	transactionsController := transactionsControllers.NewController(log,
+	transactionsController := transControllers.NewController(log,
 		transactionsService, jsonHelper)
 
 	httpServer := api.NewServer(cnf.API,

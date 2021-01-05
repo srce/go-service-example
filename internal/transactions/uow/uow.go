@@ -6,41 +6,54 @@ import (
 	"github.com/jmoiron/sqlx"
 
 	"github.com/dzyanis/go-service-example/internal/transactions"
-	transactionsRepository "github.com/dzyanis/go-service-example/internal/transactions/repositories"
+	transRepo "github.com/dzyanis/go-service-example/internal/transactions/repositories"
 	"github.com/dzyanis/go-service-example/internal/users"
-	usersRepositories "github.com/dzyanis/go-service-example/internal/users/repositories"
+	usersRepo "github.com/dzyanis/go-service-example/internal/users/repositories"
 	"github.com/dzyanis/go-service-example/internal/wallets"
-	walletsRepositories "github.com/dzyanis/go-service-example/internal/wallets/repositories"
+	walletsRepo "github.com/dzyanis/go-service-example/internal/wallets/repositories"
 	"github.com/dzyanis/go-service-example/pkg/database"
 )
 
-type StartFunc func() (*UOW, error)
+type StartFunc func() (UnitOfWork, error)
 
-type UOW struct {
+type Transaction interface {
+	Commit() error
+	Rollback() error
+}
+
+type UnitOfWork interface {
+	Transaction
+
+	Trans() transactions.Repository
+	Users() users.Repository
+	Wallets() wallets.Repository
+}
+
+type Repository struct {
 	tx      *database.Transaction
 	trans   transactions.Repository
 	users   users.Repository
 	wallets wallets.Repository
 }
 
-func NewUOW(dbc *sqlx.DB) (*UOW, error) {
+func NewRepository(dbc *sqlx.DB) (*Repository, error) {
 	tx, err := dbc.Beginx()
 	if err != nil {
 		return nil, fmt.Errorf("begin tx: %w", err)
 	}
 
-	db := database.NewTx(tx)
-	return &UOW{
-		tx:      db,
-		trans:   transactionsRepository.NewRepository(db),
-		users:   usersRepositories.NewRepository(db),
-		wallets: walletsRepositories.NewRepository(db),
+	dbtx := database.NewTx(tx)
+	return &Repository{
+		tx:      dbtx,
+		trans:   transRepo.NewRepository(dbtx),
+		users:   usersRepo.NewRepository(dbtx),
+		wallets: walletsRepo.NewRepository(dbtx),
 	}, nil
 }
 
-func (u *UOW) Trans() transactions.Repository { return u.trans }
-func (u *UOW) Users() users.Repository        { return u.users }
-func (u *UOW) Wallets() wallets.Repository    { return u.wallets }
+func (r *Repository) Trans() transactions.Repository { return r.trans }
+func (r *Repository) Users() users.Repository        { return r.users }
+func (r *Repository) Wallets() wallets.Repository    { return r.wallets }
 
-func (u *UOW) Commit() error   { return u.tx.Commit() }
-func (u *UOW) Rollback() error { return u.tx.Rollback() }
+func (r *Repository) Commit() error   { return r.tx.Commit() }
+func (r *Repository) Rollback() error { return r.tx.Rollback() }
