@@ -5,16 +5,13 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/dzyanis/go-service-example/internal/transactions"
+	"github.com/dzyanis/go-service-example/internal/transactions/uow"
 	"github.com/dzyanis/go-service-example/internal/users"
 	"github.com/dzyanis/go-service-example/internal/wallets"
 	"github.com/dzyanis/go-service-example/pkg/currencies"
 	"github.com/dzyanis/go-service-example/pkg/logger"
 	"github.com/dzyanis/go-service-example/pkg/money"
-)
-
-const (
-	CompanyBeneficiaryEmail = "company@beneficiary"
-	CompanyFeePercent       = 1.5
 )
 
 var (
@@ -23,7 +20,7 @@ var (
 )
 
 func calculate(sender, beneficiary *wallets.Wallet,
-	amount money.Money, feePercent float64) (*Transaction, money.Money, error) {
+	amount money.Money, feePercent float64) (*transactions.Transaction, money.Money, error) {
 	var (
 		currency = amount.Currency()
 		zero     = money.Zero(currency)
@@ -44,7 +41,7 @@ func calculate(sender, beneficiary *wallets.Wallet,
 	}
 	sender.Amount -= amountWithFee.Units()
 	beneficiary.Amount += amount.Units()
-	return &Transaction{
+	return &transactions.Transaction{
 		SenderID:      sender.ID,
 		BeneficiaryID: beneficiary.ID,
 		Amount:        amount.Units(),
@@ -54,14 +51,14 @@ func calculate(sender, beneficiary *wallets.Wallet,
 
 type Service struct {
 	log         *logger.Logger
-	repoTrans   *Repository
+	repoTrans   transactions.Repository
 	repoUsers   users.Repository
 	repoWallets wallets.Repository
-	uow         UOWStartFunc
+	uow         uow.StartFunc
 }
 
-func NewService(log *logger.Logger, repoTrans *Repository,
-	repoUsers users.Repository, repoWallets wallets.Repository, uow UOWStartFunc) *Service {
+func NewService(log *logger.Logger, repoTrans transactions.Repository,
+	repoUsers users.Repository, repoWallets wallets.Repository, uow uow.StartFunc) *Service {
 	return &Service{
 		log:         log,
 		repoTrans:   repoTrans,
@@ -83,7 +80,7 @@ func (s *Service) Transfer(ctx context.Context,
 		return fmt.Errorf("getting beneficiary wallet: %w", err)
 	}
 
-	trans, fees, err := calculate(senderWallet, beneficiaryWallet, amount, CompanyFeePercent)
+	trans, fees, err := calculate(senderWallet, beneficiaryWallet, amount, transactions.CompanyFeePercent)
 	if err != nil {
 		return fmt.Errorf("transferring: %w", err)
 	}
@@ -101,7 +98,7 @@ func (s *Service) Transfer(ctx context.Context,
 	}
 
 	if fees.Units() > 0 {
-		companyBeneficiary, err := uow.Users().GetByEmail(ctx, CompanyBeneficiaryEmail)
+		companyBeneficiary, err := uow.Users().GetByEmail(ctx, transactions.CompanyBeneficiaryEmail)
 		if err != nil {
 			return fmt.Errorf("getting company beneficiary: %w", err)
 		}
@@ -112,7 +109,7 @@ func (s *Service) Transfer(ctx context.Context,
 			return fmt.Errorf("getting wallet: %w", err)
 		}
 
-		_, err = uow.Trans().Create(ctx, &Transaction{
+		_, err = uow.Trans().Create(ctx, &transactions.Transaction{
 			SenderID:      senderWallet.ID,
 			BeneficiaryID: companyWallet.ID,
 			Amount:        fees.Units(),

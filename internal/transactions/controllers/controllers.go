@@ -3,18 +3,19 @@ package transactions
 import (
 	"net/http"
 
+	"github.com/dzyanis/go-service-example/internal/transactions"
 	"github.com/dzyanis/go-service-example/pkg/controllers"
 	"github.com/dzyanis/go-service-example/pkg/logger"
 )
 
 type Controller struct {
 	helper  controllers.JSONHelper
-	service *Service
+	service transactions.Service
 	log     *logger.Logger
 }
 
 func NewController(log *logger.Logger,
-	service *Service, helper controllers.JSONHelper) *Controller {
+	service transactions.Service, helper controllers.JSONHelper) *Controller {
 	return &Controller{
 		log:     log,
 		service: service,

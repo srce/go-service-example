@@ -3,11 +3,13 @@ package transactions
 import (
 	"testing"
 
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
+
+	"github.com/dzyanis/go-service-example/internal/transactions"
 	"github.com/dzyanis/go-service-example/internal/wallets"
 	"github.com/dzyanis/go-service-example/pkg/currencies"
 	"github.com/dzyanis/go-service-example/pkg/money"
-	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func usd(tb testing.TB, value float64) money.Money {
@@ -25,7 +27,7 @@ func Test_calculate(t *testing.T) {
 	}
 
 	type exp struct {
-		trans  *Transaction
+		trans  *transactions.Transaction
 		fee    money.Money
 		failed bool
 	}
@@ -95,7 +97,7 @@ func Test_calculate(t *testing.T) {
 			},
 			exp: exp{
 				fee: usd(t, 1),
-				trans: &Transaction{
+				trans: &transactions.Transaction{
 					SenderID:      1,
 					BeneficiaryID: 2,
 					Amount:        1000,

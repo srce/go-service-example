@@ -14,7 +14,7 @@ type Server struct {
 	*http.Server
 	users        users.Controller
 	wallets      wallets.Controller
-	transactions *transactions.Controller
+	transactions transactions.Controller
 }
 
 type Config struct {
@@ -28,7 +28,7 @@ func (c *Config) Addr() string {
 }
 
 func NewServer(cfg Config, users users.Controller,
-	wallets wallets.Controller, transactions *transactions.Controller) *Server {
+	wallets wallets.Controller, transactions transactions.Controller) *Server {
 	return &Server{
 		Server: &http.Server{
 			Addr:         cfg.Addr(),
