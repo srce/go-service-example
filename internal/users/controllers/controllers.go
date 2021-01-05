@@ -7,6 +7,7 @@ import (
 
 	"github.com/gorilla/mux"
 
+	"github.com/dzyanis/go-service-example/internal/users"
 	"github.com/dzyanis/go-service-example/pkg/controllers"
 	"github.com/dzyanis/go-service-example/pkg/logger"
 )
@@ -14,10 +15,10 @@ import (
 type Controller struct {
 	helper  controllers.JSONHelper
 	log     *logger.Logger
-	service *Service
+	service users.Service
 }
 
-func NewController(log *logger.Logger, service *Service, helper controllers.JSONHelper) *Controller {
+func NewController(log *logger.Logger, service users.Service, helper controllers.JSONHelper) *Controller {
 	return &Controller{
 		log:     log,
 		service: service,

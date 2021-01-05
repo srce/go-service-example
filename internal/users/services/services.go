@@ -5,33 +5,20 @@ import (
 	"errors"
 	"fmt"
 	"time"
+
+	"github.com/dzyanis/go-service-example/internal/users"
 )
 
-type Request struct {
-	ID    int64   `json:"id"`
-	Name  *string `json:"name"`
-	Email *string `json:"email"`
-}
-
-type Response struct {
-	ID        int64     `json:"id,"`
-	Name      string    `json:"name"`
-	Email     string    `json:"email"`
-	Deleted   bool      `json:"deleted"`
-	CreatedAt time.Time `json:"created_at"`
-	UpdatedAt time.Time `json:"updated_at"`
-}
-
 type Service struct {
-	repo *Repository
+	repo users.Repository
 }
 
-func NewService(repo *Repository) *Service {
+func NewService(repo users.Repository) *Service {
 	return &Service{repo: repo}
 }
 
-func (s *Service) Create(ctx context.Context, name string, email string) (*Response, error) {
-	userID, err := s.repo.Create(ctx, &User{
+func (s *Service) Create(ctx context.Context, name string, email string) (*users.Response, error) {
+	userID, err := s.repo.Create(ctx, &users.User{
 		Name:      name,
 		Email:     email,
 		Deleted:   false,
@@ -45,7 +32,7 @@ func (s *Service) Create(ctx context.Context, name string, email string) (*Respo
 	return s.Get(ctx, userID)
 }
 
-func (s *Service) Update(ctx context.Context, r Request) error {
+func (s *Service) Update(ctx context.Context, r users.Request) error {
 	// TODO: implement
 	return errors.New("not implemented")
 }
@@ -57,12 +44,12 @@ func (s *Service) Delete(ctx context.Context, userID int64) error {
 	return nil
 }
 
-func (s *Service) Get(ctx context.Context, userID int64) (*Response, error) {
+func (s *Service) Get(ctx context.Context, userID int64) (*users.Response, error) {
 	u, err := s.repo.Get(ctx, userID)
 	if err != nil {
 		return nil, fmt.Errorf("getting: %w", err)
 	}
-	return &Response{
+	return &users.Response{
 		ID:        u.ID,
 		Name:      u.Name,
 		Email:     u.Email,

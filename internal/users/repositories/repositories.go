@@ -4,19 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"time"
 
+	"github.com/dzyanis/go-service-example/internal/users"
 	"github.com/dzyanis/go-service-example/pkg/database"
 )
-
-type User struct {
-	ID        int64     `db:"id"`
-	Name      string    `db:"name"`
-	Email     string    `db:"email"`
-	Deleted   bool      `db:"deleted"`
-	CreatedAt time.Time `db:"created_at"`
-	UpdatedAt time.Time `db:"updated_at"`
-}
 
 type Repository struct {
 	db database.Database
@@ -26,7 +17,7 @@ func NewRepository(db database.Database) *Repository {
 	return &Repository{db: db}
 }
 
-func (r *Repository) Create(ctx context.Context, u *User) (int64, error) {
+func (r *Repository) Create(ctx context.Context, u *users.User) (int64, error) {
 	query := `
 		INSERT INTO users
 			(name, email, deleted, created_at, updated_at)
@@ -74,9 +65,9 @@ func (r *Repository) Delete(ctx context.Context, userID int64) error {
 	return nil
 }
 
-func (r *Repository) Get(ctx context.Context, userID int64) (*User, error) {
+func (r *Repository) Get(ctx context.Context, userID int64) (*users.User, error) {
 	var (
-		user  = User{}
+		user  = users.User{}
 		query = `SELECT * FROM users WHERE id = $1 LIMIT 1;`
 	)
 
@@ -88,9 +79,9 @@ func (r *Repository) Get(ctx context.Context, userID int64) (*User, error) {
 	return &user, nil
 }
 
-func (r *Repository) GetByEmail(ctx context.Context, email string) (*User, error) {
+func (r *Repository) GetByEmail(ctx context.Context, email string) (*users.User, error) {
 	var (
-		user  = User{}
+		user  = users.User{}
 		query = `SELECT * FROM users WHERE email = $1 LIMIT 1;`
 	)
 	err := r.db.Write().GetContext(ctx, &user, query, email)

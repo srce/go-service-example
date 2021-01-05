@@ -12,7 +12,7 @@ import (
 
 type Server struct {
 	*http.Server
-	users        *users.Controller
+	users        users.Controller
 	wallets      *wallets.Controller
 	transactions *transactions.Controller
 }
@@ -27,7 +27,7 @@ func (c *Config) Addr() string {
 	return fmt.Sprintf("%s:%d", c.Host, c.Port)
 }
 
-func NewServer(cfg Config, users *users.Controller,
+func NewServer(cfg Config, users users.Controller,
 	wallets *wallets.Controller, transactions *transactions.Controller) *Server {
 	return &Server{
 		Server: &http.Server{

@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/dzyanis/go-service-example/internal/users"
+	usersRepositories "github.com/dzyanis/go-service-example/internal/users/repositories"
 	"github.com/dzyanis/go-service-example/internal/wallets"
 	"github.com/dzyanis/go-service-example/pkg/database"
 	"github.com/jmoiron/sqlx"
@@ -14,7 +15,7 @@ type UOWStartFunc func() (*UOW, error)
 type UOW struct {
 	tx      *database.Transaction
 	trans   *Repository
-	users   *users.Repository
+	users   users.Repository
 	wallets *wallets.Repository
 }
 
@@ -28,13 +29,13 @@ func NewUOW(dbc *sqlx.DB) (*UOW, error) {
 	return &UOW{
 		tx:      db,
 		trans:   NewRepository(db),
-		users:   users.NewRepository(db),
+		users:   usersRepositories.NewRepository(db),
 		wallets: wallets.NewRepository(db),
 	}, nil
 }
 
 func (u *UOW) Trans() *Repository           { return u.trans }
-func (u *UOW) Users() *users.Repository     { return u.users }
+func (u *UOW) Users() users.Repository      { return u.users }
 func (u *UOW) Wallets() *wallets.Repository { return u.wallets }
 
 func (u *UOW) Commit() error   { return u.tx.Commit() }

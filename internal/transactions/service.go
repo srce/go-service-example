@@ -55,13 +55,13 @@ func calculate(sender, beneficiary *wallets.Wallet,
 type Service struct {
 	log         *logger.Logger
 	repoTrans   *Repository
-	repoUsers   *users.Repository
+	repoUsers   users.Repository
 	repoWallets *wallets.Repository
 	uow         UOWStartFunc
 }
 
 func NewService(log *logger.Logger, repoTrans *Repository,
-	repoUsers *users.Repository, repoWallets *wallets.Repository, uow UOWStartFunc) *Service {
+	repoUsers users.Repository, repoWallets *wallets.Repository, uow UOWStartFunc) *Service {
 	return &Service{
 		log:         log,
 		repoTrans:   repoTrans,
