@@ -1,10 +1,10 @@
 # go-service-example
 This project is another attempt to create some good example service on Go.
-The main logic you can find in the file [transactions/service](internal/transactions/services/service.go)
+The main logic you can find in the file "[transactions/service](internal/transactions/services/service.go)"
 
 # Structure
-The project is trying to follow [Standard Go Project Layout](https://github.com/golang-standards/project-layout).
-If you want to dive deeply into the topic we strongly recommend to watch this video by @katzien [How Do You Structure Your Go Apps](https://www.youtube.com/watch?v=oL6JBUk6tj0)
+The project is trying to follow "[Standard Go Project Layout](https://github.com/golang-standards/project-layout)".
+If you want to dive deeply into the topic we strongly recommend to watch this video ин [Kat Zien](https://github.com/katzien) "[How Do You Structure Your Go Apps](https://www.youtube.com/watch?v=oL6JBUk6tj0)"
 
 # Setup
 ```
