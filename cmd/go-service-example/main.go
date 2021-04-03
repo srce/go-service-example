@@ -35,20 +35,22 @@ func main() {
 
 	cnf, err := config.LoadEnv(ctx, ".env")
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("loading config env: %v", err)
 	}
 
 	db := database.NewPostgres(cnf.Postgres)
 	dbBoot := database.NewBoot(db)
 	if err := runner.Try(&dbBoot, 10, time.Second); err != nil {
-		log.Fatal(err)
+		log.Fatalf("new database instance: %v", err)
 	}
 
-	schema := migrations.NewSchema(db.Connection(),
-		database.DefaultSchemaName, database.DefaultMigrationTableName)
-	migratBoot := migrations.NewBoot(log, schema)
+	mg, err := migrations.NewPostgres(db.Connection())
+	if err != nil {
+		log.Fatalf("new migrations instance: %v", err)
+	}
+	migratBoot := migrations.NewBoot(log, mg)
 	if err := runner.Once(&migratBoot); err != nil {
-		log.Fatal(err)
+		log.Fatalf("booting migrations: %v", err)
 	}
 
 	jsonHelper := controllers.JSONHelper{}
@@ -75,7 +77,7 @@ func main() {
 		usersController, walletsController, transactionsController)
 	apiBoot := api.NewBoot(log, httpServer)
 	if err := runner.Try(&apiBoot, 3, time.Second); err != nil {
-		log.Fatal(err)
+		log.Fatalf("booting http server: %v", err)
 	}
 
 	runner.WaitForTermination()
